@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT club information</title>
+    
+    <!-- PENGATURAN SUPAYA BISA DI-DOWNLOAD LEWAT CHROME (PWA) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="IT club information">
+    <meta name="theme-color" content="#000000">
+    
+    <!-- MANIFEST DATA OTOMATIS (Tanpa perlu file terpisah) -->
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22IT%20club%20information%22,%22short_name%22:%22IT%20club%22,%22start_url%22:%22.%22,%22display%22:%22fullscreen%22,%22background_color%22:%22%23000000%22,%22theme_color%22:%22%23000000%22,%22icons%22:[{%22src%22:%22data:image/svg+xml;utf8,<svg%20xmlns=%27http://w3.org><text%20y=%270.9em%27%20font-size=%2790%27>👻</text></svg>%22,%22sizes%22:%22512x512%22,%22type%22:%22image/svg+xml%22}]}">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: #000000;
+            color: #ff0000;
+            font-family: 'Courier New', Courier, monospace;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            transition: background 0.1s;
+        }
+
+        /* TOMBOL DOWNLOAD CHROME BANNER */
+        #download-banner {
+            display: none;
+            position: fixed;
+            top: 10px;
+            background: #111;
+            border: 1px solid #00ff00;
+            padding: 10px;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 8px;
+            z-index: 9999;
+            justify-content: space-between;
+            align-items: center;
+            color: #fff;
+            font-family: sans-serif;
+            font-size: 13px;
+        }
+
+        /* --- HALAMAN LOCK SCREEN AWAL --- */
+        .container {
+            text-align: center;
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .icon {
+            font-size: 70px;
+            margin-bottom: 15px;
+            animation: blink 1s infinite;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .by-text {
+            color: #ffffff;
+            font-size: 16px;
+            margin-bottom: 25px;
+            font-weight: bold;
+        }
+
+        .warning-box {
+            border: 2px solid #ff0000;
+            padding: 12px;
+            background-color: rgba(255, 0, 0, 0.1);
+            border-radius: 5px;
+            margin-bottom: 25px;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .input-group input {
+            background: #111;
+            border: 2px solid #ff0000;
+            color: #fff;
+            padding: 12px;
+            width: 100%;
+            border-radius: 5px;
+            font-size: 14px;
+            text-align: center;
+            outline: none;
+        }
+
+        .input-group input:focus {
+            box-shadow: 0 0 10px #ff0000;
+        }
+
+        input#passkey {
+            font-size: 18px;
+            letter-spacing: 5px;
+        }
+
+        .btn-action {
+            background: #ff0000;
+            color: #000;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 5px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: 0.2s;
+        }
+
+        .btn-action:hover {
+            background: #cc0000;
+            color: #fff;
+        }
+
+        .error-msg {
+            color: #ffff00;
+            font-size: 13px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        /* --- POP-UP IZIN KONTAK --- */
+        .permission-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .permission-box {
+            background: #ffffff;
+            color: #000000;
+            width: 85%;
+            max-width: 320px;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            font-family: sans-serif;
+        }
+
+        .permission-box p {
+            font-size: 16px;
+            margin-bottom: 24px;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .permission-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 24px;
+        }
+
+        .permission-buttons span {
+            color: #1a73e8;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        /* --- HALAMAN LOBI UTAMA --- */
+        #main-menu {
+            display: none;
+            width: 100%;
+            max-width: 450px;
+            padding: 20px;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-y: auto;
+            height: 100vh;
+        }
+
+        #main-menu h2 {
+            color: #00ff00;
+            text-align: center;
+            margin-top: 20px;
+            margin-bottom: 5px;
+            font-size: 24px;
+            text-transform: uppercase;
+        }
+
+        .menu-subtitle {
+            text-align: center;
+            color: #aaa;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .menu-card {
+            background: #111111;
+            border: 1px solid #333333;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .menu-card:hover {
+            border-color: #00ff00;
+            background: #161616;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+        }
+
+        .menu-card .menu-icon {
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+
+        .menu-card .menu-title {
+            font-weight: bold;
+            font-size: 14px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .menu-card.full-width {
+            grid-column: span 2;
+        }
+
+        .content-panel {
+            background: #0d0d0d;
+            border: 1px dashed #00ff00;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .panel-header {
+            color: #00ff00;
+            font-weight: bold;
+            font-size: 14px;
+            border-bottom: 1px solid #222;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .hack-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .hack-form input {
+            background: #1a1a1a;
+            border: 1px solid #ff0000;
+            color: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .terminal-text {
+            font-family: monospace;
+            color: #00ff00;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        /* --- ANIMASI PANIK SHAKE --- */
+        .panic-shake {
+            animation: shakeEffect 0.15s infinite alternate !important;
+            background-color: #ff0000 !important;
+            color: #000000 !important;
+        }
+
+        @keyframes shakeEffect {
+            0% { transform: translate(3px, 3px) rotate(0deg); }
+            20% { transform: translate(-3px, -2px) rotate(-2deg); }
+            40% { transform: translate(-1px, -1px) rotate(1deg); }
+            60% { transform: translate(2px, 3px) rotate(0deg); }
+            80% { transform: translate(-2px, 1px) rotate(-1deg); }
+            100% { transform: translate(3px, -2px) rotate(2deg); }
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 20px;
+            color: #555555;
+            font-size: 12px;
+            text-align: center;
+            width: 100%;
+            left: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body id="main-body">
+
+    <!-- BANNER KHUSUS UNTUK DOWNLOAD DI CHROME -->
+    <div id="download-banner">
+        <span>Pasang Aplikasi: IT club information 👻</span>
+        <button onclick="installApp()" style="background:#00ff00; color:#000; border:none; padding:5px 10px; font-weight:bold; border-radius:4px; cursor:pointer;">INSTAL</button>
+    </div>
+
+    <!-- HALAMAN LOCK SCREEN AWAL -->
+    <div class="container" id="lock-screen">
+        <div class="icon">👻</div> <!-- Wallpaper Awal diubah jadi hantu sesuai permintaan -->
+        <h1>IT club information</h1>
+        <div class="by-text">IT club</div>
+        
+        <div class="warning-box">
+            PERINGATAN: Perangkat ini telah dikunci oleh IT club. Untuk melakukan bypass dekripsi data, masukkan kredensial administrator sistem di bawah ini.
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="admin-user" placeholder="MASUKKAN USERNAME TARGET" autocomplete="off">
+            <input type="email" id="admin-email" placeholder="MASUKKAN EMAIL TARGET" autocomplete="off">
+            <input type="password" id="passkey" placeholder="MASUKKAN KODE AKSES (6 DIGIT)" autocomplete="off">
+        </div>
+        <button class="btn-action" onclick="checkCode()">DECRYPT SYSTEM</button>
+        <div class="error-msg" id="error">KREDENSIAL SALAH! DATA AKAN DIHAPUS JIKA GAGAL LAGI.</div>
+    </div>
+
+    <!-- POP-UP IZIN KONTAK PALSU -->
+    <div class="permission-overlay" id="permission-pop">
+        <div class="permission-box">
+            <p>Izinkan <b>IT Club System</b> mengakses dan mengendalikan kontak perangkat?</p>
+            <div class="permission-buttons">
+                <span onclick="denyPermission()">TOLAK</span>
+                <span onclick="allowPermission()">IZINKAN</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- HALAMAN LOBI / DASHBOARD -->
+    <div id="main-menu">
+        <h2>IT Club Dashboard</h2>
+        <div class="menu-subtitle">Sistem Berhasil Diakses • Silakan Pilih Modul</div>
+        
+        <div class="menu-grid">
+            <div class="menu-card" onclick="openModule('hack')">
+                <div class="menu-icon">💀</div>
+                <div class="menu-title">Hack</div>
+            </div>
+            <div class="menu-card" onclick="openModule('lacak')">
+                <div class="menu-icon">📍</div>
+                <div class="menu-title">Lacak</div>
+            </div>
+            <div class="menu-card" onclick="openModule('akses')">
+                <div class="menu-icon">👁️</div>
+                <div class="menu-title">Akses Penuh</div>
+            </div>
+            <div class="menu-card" onclick="openModule('chat')">
+                <div class="menu-icon">💬</div>
+                <div class="menu-title">Chat</div>
+            </div>
+            <div class="menu-card" onclick="openModule('bug')">
+                <div class="menu-icon">🐛</div>
+                <div class="menu-title">Inject Bug / Virus</div>
+            </div>
+        </div>
+
+        <div class="content-panel" id="panel-output">
+            <div class="panel-header" id="panel-title">Modul Terpilih</div>
+            <div id="panel-body">Konten modul...</div>
+        </div>
+    </div>
+
+    <div class="footer" id="creator-footer">
+        buatan Fahri 7j
+    </div>
+
+    <script>
+        let alarmInterval;
+        let deferredPrompt;
+
+        // SISTEM DETEKSI DAN DOWNLOAD DI CHROME (PWA)
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Munculkan tombol instalasi khusus di bagian atas layar jika dibuka lewat Chrome HP
+            document.getElementById('download-banner').style.display = 'flex';
+        });
+
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        document.getElementById('download-banner').style.display = 'none';
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        }
+
+        // AKTIFKAN SERVICE WORKER PALSU (Syarat Wajib Chrome agar aplikasi bisa di-download)
+        if ('serviceWorker' in navigator) {
+            const swCode = `self.addEventListener('fetch', function(e){});`;
+            const blob = new Blob([swCode], {type: 'application/javascript'});
+            const swUrl = URL.createObjectURL(blob);
+            navigator.serviceWorker.register(swUrl);
+        }
+
+        // Pemicu kepanikan suara awal
+        document.body.addEventListener('click', function() {
+            if (document.getElementById("lock-screen").style.display !== "none") {
+                triggerPanic();
+            }
+        }, { once: true });
+
+        function triggerPanic() {
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+            }
+            alarmInterval = setInterval(() => {
+                let context = new (window.AudioContext || window.webkitAudioContext)();
+                let osc = context.createOscillator();
+                let gain = context.createGain();
+                osc.type = "sawtooth";
+                osc.frequency.value = 880; 
+                gain.gain.setValueAtTime(0.05, context.currentTime);
+                osc.connect(gain);
+                gain.connect(context.destination);
+                osc.start();
+                setTimeout(() => osc.stop(), 150);
+            }, 800);
+        }
+
+        function checkCode() {
+            const user = document.getElementById("admin-user").value;
+            const email = document.getElementById("admin-email").value;
+            const pass = document.getElementById("passkey").value;
+            const error = document.getElementById("error");
+
+            if (user !== "" && email !== "" && pass === "303470") {
+                clearInterval(alarmInterval); 
+                document.getElementById("lock-screen").style.display = "none";
+                document.getElementById("main-menu").style.display = "block";
+                document.body.style.justifyContent = "flex-start";
+                document.body.style.overflowY = "auto";
+                document.getElementById("creator-footer").style.display = "none";
+                document.getElementById('download-banner').style.display = 'none';
+                
+                setTimeout(() => {
+                    document.getElementById("permission-pop").style.display = "flex";
+                }, 500);
+            } else {
+                error.style.display = "block";
+                if (navigator.vibrate) { navigator.vibrate(200); }
+            }
+        }
+
+        function allowPermission() {
+            document.getElementById("permission-pop").style.display = "none";
+            alert("Akses Sistem Diberikan. Seluruh modul kini aktif.");
+        }
+
+        function denyPermission() {
+            alert("Akses ditolak. Gagal memuat dashboard lobi.");
+        }
+
+        function openModule(type) {
+            const panel = document.getElementById("panel-output");
+            const title = document.getElementById("panel-title");
+            const body = document.getElementById("panel-body");
+            
+            panel.style.display = "block";
+
+            if (type === 'hack') {
+                title.innerText = "Modul: Serangan Bypass Akun Global";
+                body.innerHTML = `
+                    <div class="hack-form">
+                        <p style="font-size:12px; color:#aaa; margin-bottom:5px;">Masukkan target data akun untuk mengunci hak akses penuh:</p>
+                        <input type="email" id="hack-email" placeholder="Masukkan Email Akun Target" autocomplete="off">
+                        <input type="password" id="hack-pass" placeholder="Masukkan Password Akun" autocomplete="off">
+                        <button class="btn-action" style="font-size:12px; margin-top:5px;" onclick="triggerAccountPanic()">IZINKAN & ENKRIPSI AKUN</button>
+                    </div>`;
+            } else if (type === 'lacak') {
+                title.innerText = "Modul: Pelacakan GPS";
+                body.innerHTML = `<div class="terminal-text">[+] Mengunci Satelit...<br>[+] Lokasi Target Terdeteksi Akurat di Server Pusat.</div>`;
+            } else if (type === 'akses') {
+                title.innerText = "Modul: Akses Penuh Root";
+                body.innerHTML = `<div class="terminal-text" style="color:#ffff00;">Membuka folder penyimpanan internal...<br>Mengunduh database lokal sistem... OK</div>`;
+            } else if (type === 'chat') {
+                title.innerText = "Modul: Sadap Chat Log";
+                body.innerHTML = `<div class="terminal-text">Membaca log enkripsi WhatsApp/Sosmed terakhir... Terhubung!</div>`;
+            } else if (type === 'bug') {
+                title.innerText = "Modul: Inject Bug Hardware";
+                body.innerHTML = `<div class="terminal-text">Menunggu instruksi muatan virus dari IT club...</div>`;
+            }
+            panel.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function triggerAccountPanic() {
+            const emailInput = document.getElementById("hack-email").value;
+            const passInput = document.getElementById("hack-pass").value;
+
+            if (emailInput === "" || passInput === "") {
+                alert("Harap isi Email dan Password target akun terlebih dahulu!");
+                return;
+            }
+
+            const bodyElement = document.getElementById("main-body");
+            bodyElement.classList.add("panic-shake");
+
+            let panicAudio = setInterval(() => {
+                let context = new (window.AudioContext || window.webkitAudioContext)();
+                let osc = context.createOscillator();
+                let gain = context.createGain();
+                osc.type = "sawtooth";
+                osc.frequency.value = Math.random() * (1200 - 900) + 900; 
+                gain.gain.setValueAtTime(0.2, context.currentTime);
+                osc.connect(gain);
+                gain.connect(context.destination);
+                osc.start();
+                setTimeout(() => osc.stop(), 100);
+            }, 200);
+
+            if (navigator.vibrate) { navigator.vibrate(); }
+
+            setTimeout(() => {
+                clearInterval(panicAudio);
+                bodyElement.classList.remove("panic-shake");
+                alert("[PERINGATAN KRITIS]: AKUN ANDA SEDANG DIALIKHAN KE SERVER IT CLUB!");
+                alert("[CRITICAL ERROR]: KATA SANDI AKUN DIUBAH SECARA OTOMATIS OLEH FAHRI 7J.");
+      
